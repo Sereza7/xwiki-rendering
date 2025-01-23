@@ -19,11 +19,21 @@
  */
 package org.xwiki.rendering.internal.renderer.xhtml.image;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.xwiki.component.annotation.Component;
 import org.xwiki.component.annotation.InstantiationStrategy;
 import org.xwiki.component.descriptor.ComponentInstantiationStrategy;
+import org.xwiki.rendering.internal.renderer.xhtml.XHTMLRendererFactory;
+import org.xwiki.rendering.listener.reference.ResourceReference;
+import org.xwiki.rendering.renderer.PrintRenderer;
+import org.xwiki.rendering.renderer.printer.DefaultWikiPrinter;
+import org.xwiki.rendering.renderer.printer.WikiPrinter;
+import org.xwiki.rendering.renderer.printer.XHTMLWikiPrinter;
+import org.xwiki.rendering.util.IconProvider;
+
+import java.util.Map;
 
 /**
  * Handle XHTML rendering for icon images.
@@ -36,4 +46,20 @@ import org.xwiki.component.descriptor.ComponentInstantiationStrategy;
 @InstantiationStrategy(ComponentInstantiationStrategy.PER_LOOKUP)
 public class IconXHTMLImageTypeRenderer extends AttachmentXHTMLImageTypeRenderer
 {
+    @Inject
+    private IconProvider iconProvider;
+    @Inject
+    private XHTMLRendererFactory xhtmlRendererFactory;
+    /** 
+     * Icons are technically images but can sometimes be rendered as other elements depending on the iconSet.
+     * @since 17.1.0RC1
+     */
+    @Override
+    public void onImage(ResourceReference reference, boolean freestanding, String id, Map<String, String> parameters)
+    {
+        XHTMLWikiPrinter printer = getXHTMLWikiPrinter();
+        PrintRenderer renderer = xhtmlRendererFactory.createRenderer(printer);
+        // We compute the content of this icon and then make sure we traverse the content.
+        iconProvider.get(reference.getReference()).traverse(renderer);
+    }
 }
